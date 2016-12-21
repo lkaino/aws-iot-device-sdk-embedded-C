@@ -30,23 +30,26 @@ extern "C" {
 /* This is the value used for ssl read timeout */
 #define IOT_SSL_READ_TIMEOUT 10
 
+#ifdef IOT_DEBUG
+	unsigned char gBuf[MBEDTLS_SSL_MAX_CONTENT_LEN + 1];
+#endif
+
 /*
  * This is a function to do further verification if needed on the cert received
  */
 
 static int _iot_tls_verify_cert(void *data, mbedtls_x509_crt *crt, int depth, uint32_t *flags) {
-	char buf[1024];
 	((void) data);
 
 	IOT_DEBUG("\nVerify requested for (Depth %d):\n", depth);
-	mbedtls_x509_crt_info(buf, sizeof(buf) - 1, "", crt);
-	IOT_DEBUG("%s", buf);
+	mbedtls_x509_crt_info(gBuf, sizeof(gBuf) - 1, "", crt);
+	IOT_DEBUG("%s", gBuf);
 
 	if((*flags) == 0) {
 		IOT_DEBUG("  This certificate has no flags\n");
 	} else {
-		IOT_DEBUG(buf, sizeof(buf), "  ! ", *flags);
-		IOT_DEBUG("%s\n", buf);
+		IOT_DEBUG(gBuf, sizeof(gBuf), "  ! ", *flags);
+		IOT_DEBUG("%s\n", gBuf);
 	}
 
 	return 0;
@@ -93,9 +96,6 @@ IoT_Error_t iot_tls_connect(Network *pNetwork, TLSConnectParams *params) {
 	TLSDataParams *tlsDataParams = NULL;
 	char portBuffer[6];
 	char vrfy_buf[512];
-#ifdef IOT_DEBUG
-	unsigned char buf[MBEDTLS_SSL_MAX_CONTENT_LEN + 1];
-#endif
 
 	if(NULL == pNetwork) {
 		return NULL_VALUE_ERROR;
@@ -248,11 +248,11 @@ IoT_Error_t iot_tls_connect(Network *pNetwork, TLSConnectParams *params) {
 		ret = SUCCESS;
 	}
 
-#ifdef IOT_DEBUG
+#ifdef ENABLE_IOT_DEBUG
 	if (mbedtls_ssl_get_peer_cert(&(tlsDataParams->ssl)) != NULL) {
 		IOT_DEBUG("  . Peer certificate information    ...\n");
-		mbedtls_x509_crt_info((char *) buf, sizeof(buf) - 1, "      ", mbedtls_ssl_get_peer_cert(&(tlsDataParams->ssl)));
-		IOT_DEBUG("%s\n", buf);
+		mbedtls_x509_crt_info((char *) gBuf, sizeof(gBuf) - 1, "      ", mbedtls_ssl_get_peer_cert(&(tlsDataParams->ssl)));
+		IOT_DEBUG("%s\n", gBuf);
 	}
 #endif
 
